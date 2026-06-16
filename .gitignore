@@ -1,0 +1,30 @@
+# Raw data — too large for git, download from Kaggle
+data/raw/
+*.csv
+
+# Processed data is committed (small parquet files needed for Streamlit Cloud)
+# data/processed/ is intentionally NOT ignored
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.env
+.venv/
+venv/
+env/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
