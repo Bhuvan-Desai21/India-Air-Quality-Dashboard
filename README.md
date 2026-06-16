@@ -5,7 +5,7 @@ An analytical environmental intelligence platform that tracks and visualizes air
 ## Live Application
 
 An interactive version of this platform is deployed here:
-👉 **[Streamlit Cloud Demo Link](https://share.streamlit.io/your-username/your-repo-name)** *(Placeholder - replace with your actual deployment URL)*
+ **[Streamlit Cloud Demo Link](https://bhuvan-desai-india-air-quality-data-analysis.streamlit.app/)** 
 
 ## Features
 
@@ -54,6 +54,3 @@ python notebooks/01_data_pipeline.py
 
 This cleans and converts the raw data to compressed Parquet files under `data/processed/` for faster loading times.
 
-## License
-
-This project is open-source and available under the MIT License.
