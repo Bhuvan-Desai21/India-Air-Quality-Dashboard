@@ -111,3 +111,47 @@ Deployed as a Docker Space: **[Bhuvandesai/india-air-quality](https://huggingfac
 
 A LangGraph client connects with the bearer header and uses the five tools above.
 
+## Chatbot (Ask AI)
+
+The dashboard includes an **Ask AI** page (`pages/Ask_AI.py`) backed by a LangGraph
+ReAct agent (Groq `llama-3.3-70b-versatile`) that answers air-quality questions by
+calling the deployed MCP tools over streamable-HTTP. It keeps multi-turn memory and
+shows, under each answer, which tools it called ("Tools used").
+
+### How it works
+
+- `chatbot/config.py` - environment-based settings and logging.
+- `chatbot/runtime.py` - a persistent background event loop bridging the async MCP
+  tools to Streamlit's synchronous execution model.
+- `chatbot/agent.py` - loads the MCP tools via `langchain-mcp-adapters` and builds the
+  agent with `create_react_agent` plus a `MemorySaver` checkpointer.
+- `pages/Ask_AI.py` - the Streamlit chat UI.
+
+### Configuration
+
+Add your keys to `.streamlit/secrets.toml` (gitignored; template at
+`.streamlit/secrets.toml.example`):
+
+```toml
+GROQ_API_KEY = "gsk_..."
+MCP_AUTH_TOKEN = "aqmcp_..."
+```
+
+### Run
+
+```bash
+streamlit run app.py
+```
+
+Open the **Ask AI** page in the sidebar and ask, for example, "Which city has the worst AQI?".
+
+### Headless check
+
+```bash
+GROQ_API_KEY=... MCP_AUTH_TOKEN=... ./.venv/Scripts/python.exe -m chatbot.smoke_chat
+```
+
+## License
+
+This project is open-source and available under the MIT License.
+
