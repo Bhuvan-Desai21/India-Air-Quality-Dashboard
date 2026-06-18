@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "india-air-quality": {
+      "command": "E:\\air_quality\\.venv\\Scripts\\python.exe",
+      "args": ["E:\\air_quality\\air_quality_mcp.py"]
+    }
+  }
+}

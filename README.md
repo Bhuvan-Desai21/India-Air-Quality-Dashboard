@@ -54,6 +54,58 @@ python notebooks/01_data_pipeline.py
 
 This cleans and converts the raw data to compressed Parquet files under `data/processed/` for faster loading times.
 
+## MCP Server (Agentic Layer)
+
+The same analysis is exposed as an **MCP (Model Context Protocol) server**
+(`air_quality_mcp.py`), so LLM clients — Claude Desktop today, a LangGraph chatbot
+later — can answer data questions by *calling tools* instead of guessing. It reads the
+cleaned parquet directly (no Streamlit dependency) and resolves the data path from the
+script location, so it runs from any working directory.
+
+### Tools
+
+| Tool | Purpose |
+| --- | --- |
+| `list_cities()` | Cities + dataset coverage (2015–2020, historical). |
+| `get_aqi(city, date?)` | AQI, category, and all pollutants for a day (latest valid if no date). |
+| `compare_cities(cities, metric)` | One metric across cities, each at its latest valid reading. |
+| `trend(city, metric, days)` | Recent daily series + a min/max/mean/direction summary. |
+| `rank_cities(metric, n, order)` | Cities ranked best/worst — e.g. *"worst AQI right now?"*. |
+
+### Setup
+
+```bash
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt   # includes mcp[cli]
+```
+
+### Run / test
+
+```bash
+# Smoke-test the tool logic (no protocol needed):
+.venv\Scripts\python.exe smoke_test.py
+
+# Inspect interactively in the MCP Inspector (requires Node.js / npx):
+.venv\Scripts\mcp.exe dev air_quality_mcp.py
+```
+
+### Transports
+
+The same file serves every client; the transport is chosen by environment variable:
+
+| `MCP_TRANSPORT` | Behaviour | Used by |
+| --- | --- | --- |
+| `stdio` (default) | `mcp.run()` | Claude Desktop (local), MCP Inspector |
+| `http` | `mcp.run(transport="streamable-http")` on `0.0.0.0:$PORT` | Hugging Face Spaces, LangGraph client |
+
+### Connect to Claude Desktop (local, stdio)
+
+Add this server to Claude Desktop via **Settings → Developer → Edit Config**, then
+restart Claude Desktop. Merge the `mcpServers` block from
+[`claude_desktop_config.snippet.json`](claude_desktop_config.snippet.json) into your
+existing config — use **absolute paths** and the **venv python**. After restarting,
+ask: *"which city has the worst AQI right now?"* and Claude will call `rank_cities`.
+
 ## License
 
 This project is open-source and available under the MIT License.

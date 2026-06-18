@@ -3,3 +3,6 @@ pandas>=2.2.0
 plotly>=5.22.0
 pyarrow>=16.1.0
 numpy>=1.26.0
+
+# MCP server (air_quality_mcp.py) -- pinned below v2 (v2 is alpha)
+mcp[cli]>=1.27,<2
