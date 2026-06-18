@@ -16,6 +16,16 @@ from chatbot.config import get_logger, get_settings
 
 log = get_logger("chatbot.agent")
 
+# Metadata (name + description) for the tools currently loaded from the MCP server,
+# populated by build_agent() and surfaced in the UI "how this works" panel.
+TOOLS_INFO: list[dict] = []
+
+
+def tools_info() -> list[dict]:
+    """Return [{name, description}] for the loaded MCP tools (empty until built)."""
+    return list(TOOLS_INFO)
+
+
 SYSTEM_PROMPT = (
     "You are an assistant for an India air-quality dashboard. Data covers 11 cities, "
     "2015-2020, and is historical (not real-time). Use the provided tools for every "
@@ -66,6 +76,11 @@ def build_agent() -> Any:
     except Exception as e:  # noqa: BLE001
         raise RuntimeError(f"Failed to load MCP tools from {s.mcp_url}: {e}") from e
     log.info("Loaded %d MCP tools: %s", len(tools), [t.name for t in tools])
+    TOOLS_INFO.clear()
+    TOOLS_INFO.extend(
+        {"name": t.name, "description": (getattr(t, "description", "") or "").strip()}
+        for t in tools
+    )
     return create_react_agent(llm, tools, checkpointer=MemorySaver(), prompt=SYSTEM_PROMPT)
 
 
