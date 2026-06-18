@@ -26,12 +26,26 @@ SYSTEM_PROMPT = (
 
 
 def extract_tool_calls(messages: list) -> list[dict]:
-    """Pull the tool calls the agent made out of a result message list."""
+    """Pull the tool calls the agent made out of a message list."""
     calls = []
     for m in messages:
         for tc in getattr(m, "tool_calls", None) or []:
             calls.append({"name": tc["name"], "args": tc.get("args", {})})
     return calls
+
+
+def current_turn(messages: list) -> list:
+    """Return only the latest turn's messages (those after the last human message).
+
+    With a MemorySaver checkpointer, ainvoke returns the whole thread history; we want
+    just this turn so the answer text and "tools used" reflect the current question,
+    not earlier ones.
+    """
+    last_human = -1
+    for i, m in enumerate(messages):
+        if getattr(m, "type", None) == "human":
+            last_human = i
+    return messages[last_human + 1:]
 
 
 def build_agent() -> Any:
@@ -64,9 +78,9 @@ def answer(agent: Any, thread_id: str, user_text: str) -> dict[str, Any]:
         config={"configurable": {"thread_id": thread_id}},
     ))
     latency = round(time.perf_counter() - start, 2)
-    messages = result["messages"]
-    text = messages[-1].content or ""
-    tool_calls = extract_tool_calls(messages)
+    turn = current_turn(result["messages"])
+    text = (turn[-1].content if turn else "") or ""
+    tool_calls = extract_tool_calls(turn)
     log.info("A[%s] (%.2fs, tools=%s): %d chars",
              thread_id, latency, [c["name"] for c in tool_calls], len(text or ""))
     return {"text": text, "tool_calls": tool_calls, "latency_s": latency}
