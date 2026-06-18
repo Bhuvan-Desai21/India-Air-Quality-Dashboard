@@ -22,3 +22,18 @@ def test_extract_tool_calls_reads_ai_tool_calls():
 
 def test_extract_tool_calls_empty_when_none():
     assert extract_tool_calls([AIMessage(content="hi")]) == []
+
+
+def test_extract_tool_calls_aggregates_across_messages():
+    messages = [
+        AIMessage(content="", tool_calls=[{"name": "list_cities", "args": {}, "id": "1"}]),
+        ToolMessage(content="[...]", tool_call_id="1"),
+        AIMessage(content="", tool_calls=[{"name": "get_aqi", "args": {"city": "Delhi"}, "id": "2"}]),
+        ToolMessage(content="{...}", tool_call_id="2"),
+        AIMessage(content="Done."),
+    ]
+    calls = extract_tool_calls(messages)
+    assert calls == [
+        {"name": "list_cities", "args": {}},
+        {"name": "get_aqi", "args": {"city": "Delhi"}},
+    ]

@@ -34,7 +34,7 @@ def extract_tool_calls(messages: list) -> list[dict]:
     return calls
 
 
-def build_agent():
+def build_agent() -> Any:
     """Build the ReAct agent bound to the MCP tools. Runs on the shared loop."""
     s = get_settings()
     # get_settings() guarantees GROQ_API_KEY is in the environment; ChatGroq reads it
@@ -47,12 +47,15 @@ def build_agent():
             "headers": {"Authorization": f"Bearer {s.mcp_auth_token}"},
         }
     })
-    tools = runtime.run(client.get_tools())
+    try:
+        tools = runtime.run(client.get_tools())
+    except Exception as e:  # noqa: BLE001
+        raise RuntimeError(f"Failed to load MCP tools from {s.mcp_url}: {e}") from e
     log.info("Loaded %d MCP tools: %s", len(tools), [t.name for t in tools])
     return create_react_agent(llm, tools, checkpointer=MemorySaver(), prompt=SYSTEM_PROMPT)
 
 
-def answer(agent, thread_id: str, user_text: str) -> dict[str, Any]:
+def answer(agent: Any, thread_id: str, user_text: str) -> dict[str, Any]:
     """Run one user turn. Returns {text, tool_calls, latency_s}."""
     log.info("Q[%s]: %s", thread_id, user_text)
     start = time.perf_counter()
@@ -62,7 +65,7 @@ def answer(agent, thread_id: str, user_text: str) -> dict[str, Any]:
     ))
     latency = round(time.perf_counter() - start, 2)
     messages = result["messages"]
-    text = messages[-1].content
+    text = messages[-1].content or ""
     tool_calls = extract_tool_calls(messages)
     log.info("A[%s] (%.2fs, tools=%s): %d chars",
              thread_id, latency, [c["name"] for c in tool_calls], len(text or ""))
