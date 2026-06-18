@@ -1,0 +1,4 @@
+# Minimal deps for the remote MCP server (no Streamlit). uvicorn/starlette ship with mcp[cli].
+mcp[cli]>=1.27,<2
+pandas>=2.2.0
+pyarrow>=16.1.0

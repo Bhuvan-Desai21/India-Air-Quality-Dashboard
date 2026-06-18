@@ -57,10 +57,11 @@ This cleans and converts the raw data to compressed Parquet files under `data/pr
 ## MCP Server (Agentic Layer)
 
 The same analysis is exposed as an **MCP (Model Context Protocol) server**
-(`air_quality_mcp.py`), so LLM clients — Claude Desktop today, a LangGraph chatbot
-later — can answer data questions by *calling tools* instead of guessing. It reads the
-cleaned parquet directly (no Streamlit dependency) and resolves the data path from the
-script location, so it runs from any working directory.
+(`air_quality_mcp.py`), so an LLM client can answer data questions by *calling tools*
+instead of guessing. It is deployed as a remote, token-protected server on Hugging Face
+Spaces and is consumed by a LangGraph chatbot. It reads the cleaned parquet directly (no
+Streamlit dependency) and resolves the data path from the script location, so it runs
+from any working directory.
 
 ### Tools
 
@@ -95,14 +96,18 @@ The same file serves every client; the transport is chosen by environment variab
 
 | `MCP_TRANSPORT` | Behaviour | Used by |
 | --- | --- | --- |
-| `stdio` (default) | `mcp.run()` | Claude Desktop (local), MCP Inspector |
-| `http` | `mcp.run(transport="streamable-http")` on `0.0.0.0:$PORT` | Hugging Face Spaces, LangGraph client |
+| `stdio` (default) | `mcp.run()` | local dev, MCP Inspector |
+| `http` | streamable-HTTP on `0.0.0.0:$PORT`, optional bearer auth | Hugging Face Spaces, LangGraph client |
 
-### Connect to Claude Desktop (local, stdio)
+### Remote deployment (Hugging Face Spaces)
 
-Add this server to Claude Desktop via **Settings → Developer → Edit Config**, then
-restart Claude Desktop. Merge the `mcpServers` block from
-[`claude_desktop_config.snippet.json`](claude_desktop_config.snippet.json) into your
-existing config — use **absolute paths** and the **venv python**. After restarting,
-ask: *"which city has the worst AQI right now?"* and Claude will call `rank_cities`.
+Deployed as a Docker Space: **[Bhuvandesai/india-air-quality](https://huggingface.co/spaces/Bhuvandesai/india-air-quality)**.
+
+- **Endpoint:** `POST https://Bhuvandesai-india-air-quality.hf.space/mcp`
+- **Auth:** requires `Authorization: Bearer <token>`. The token is stored as the Space
+  secret `MCP_AUTH_TOKEN` (never committed). `GET /` is an open health page.
+- The deployable copy (server, parquet, `Dockerfile`, minimal `requirements.txt`,
+  Space `README.md`) lives in [`hf-space/`](hf-space/).
+
+A LangGraph client connects with the bearer header and uses the five tools above.
 
