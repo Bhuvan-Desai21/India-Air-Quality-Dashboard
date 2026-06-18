@@ -6,3 +6,9 @@ numpy>=1.26.0
 
 # MCP server (air_quality_mcp.py) -- pinned below v2 (v2 is alpha)
 mcp[cli]>=1.27,<2
+
+# LangGraph chatbot (pages/Ask_AI.py)
+langgraph>=0.2.50
+langchain-core>=0.3.0
+langchain-groq>=0.2.0
+langchain-mcp-adapters>=0.1.0
