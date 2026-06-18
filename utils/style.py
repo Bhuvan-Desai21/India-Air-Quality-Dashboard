@@ -10,13 +10,13 @@ import numpy as np
 
 # Design Token Palette
 TOKENS = {
-    "bg_primary": "#0E1116",
-    "bg_surface": "#151A21",
-    "bg_elevated": "#1B222C",
-    "border": "#27303A",
-    "text_primary": "#F4F7FA",
-    "text_secondary": "#A6B1BE",
-    "text_muted": "#6F7A88",
+    "bg_primary": "#141413",
+    "bg_surface": "#1e1d1b",
+    "bg_elevated": "#292724",
+    "border": "#38352f",
+    "text_primary": "#faf9f5",
+    "text_secondary": "#b3ada1",
+    "text_muted": "#8a8378",
     "teal": "#4FD1C5",
     "amber": "#F6C445",
     "orange": "#FB8500",
@@ -215,8 +215,8 @@ div[role="listbox"] {{
 .ribbon-container {{
     margin-bottom: 16px;
     padding: 12px 16px;
-    background-color: #151A21;
-    border: 1px dashed #27303A;
+    background-color: #1e1d1b;
+    border: 1px dashed #38352f;
     border-radius: 6px;
 }}
 
@@ -231,13 +231,13 @@ div[role="listbox"] {{
     font-family: 'Space Grotesk', sans-serif;
     font-size: 0.85rem;
     font-weight: 600;
-    color: #F4F7FA;
+    color: #faf9f5;
 }}
 
 .ribbon-stat {{
     font-family: 'IBM Plex Mono', monospace;
     font-size: 0.72rem;
-    color: #6F7A88;
+    color: #8a8378;
 }}
 
 .ribbon-bar {{
@@ -245,7 +245,7 @@ div[role="listbox"] {{
     height: 12px;
     border-radius: 3px;
     overflow: hidden;
-    background-color: #1a1f26;
+    background-color: #181714;
 }}
 
 .ribbon-block {{
@@ -255,8 +255,8 @@ div[role="listbox"] {{
 
 /* Fingerprint Card Styles */
 .fingerprint-card {{
-    background-color: #151A21;
-    border: 1px dashed #27303A;
+    background-color: #1e1d1b;
+    border: 1px dashed #38352f;
     border-radius: 8px;
     padding: 18px;
     margin-bottom: 16px;
@@ -267,7 +267,7 @@ div[role="listbox"] {{
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px dashed #27303A;
+    border-bottom: 1px dashed #38352f;
     padding-bottom: 8px;
     margin-bottom: 12px;
 }}
@@ -276,7 +276,7 @@ div[role="listbox"] {{
     font-family: 'Space Grotesk', sans-serif;
     font-size: 1rem;
     font-weight: 600;
-    color: #F4F7FA;
+    color: #faf9f5;
 }}
 
 .fingerprint-value {{
@@ -299,7 +299,7 @@ div[role="listbox"] {{
 
 .fingerprint-label {{
     font-size: 0.65rem;
-    color: #A6B1BE;
+    color: #b3ada1;
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }}
@@ -307,14 +307,14 @@ div[role="listbox"] {{
 .fingerprint-data {{
     font-family: 'IBM Plex Mono', monospace;
     font-size: 0.8rem;
-    color: #F4F7FA;
+    color: #faf9f5;
     font-weight: 500;
 }}
 
 /* Station Monitor Card Styles */
 .station-monitor-card {{
-    background-color: #151A21;
-    border: 1px dashed #27303A;
+    background-color: #1e1d1b;
+    border: 1px dashed #38352f;
     border-radius: 8px;
     padding: 16px;
     margin-bottom: 16px;
@@ -331,7 +331,7 @@ div[role="listbox"] {{
     font-family: 'Space Grotesk', sans-serif;
     font-size: 0.9rem;
     font-weight: 600;
-    color: #F4F7FA;
+    color: #faf9f5;
 }}
 
 .station-monitor-badge {{
@@ -345,7 +345,7 @@ div[role="listbox"] {{
 .station-monitor-details {{
     font-family: 'IBM Plex Mono', monospace;
     font-size: 0.78rem;
-    color: #A6B1BE;
+    color: #b3ada1;
     margin-top: 4px;
 }}
 
@@ -353,7 +353,7 @@ div[role="listbox"] {{
 .reference-table-container {{
     overflow-x: auto;
     margin-bottom: 24px;
-    border: 1px dashed #27303A;
+    border: 1px dashed #38352f;
     border-radius: 6px;
 }}
 
@@ -362,25 +362,25 @@ div[role="listbox"] {{
     border-collapse: collapse;
     font-family: 'Inter', sans-serif;
     font-size: 0.8rem;
-    color: #F4F7FA;
-    background-color: #151A21;
+    color: #faf9f5;
+    background-color: #1e1d1b;
 }}
 
 .ref-table th {{
-    background-color: #1B222C;
-    color: #A6B1BE;
+    background-color: #292724;
+    color: #b3ada1;
     font-family: 'Space Grotesk', sans-serif;
     text-transform: uppercase;
     font-size: 0.72rem;
     letter-spacing: 0.05em;
     padding: 12px 16px;
     text-align: left;
-    border-bottom: 1px dashed #27303A;
+    border-bottom: 1px dashed #38352f;
 }}
 
 .ref-table td {{
     padding: 12px 16px;
-    border-bottom: 1px dashed #27303A;
+    border-bottom: 1px dashed #38352f;
     vertical-align: top;
 }}
 
@@ -391,7 +391,7 @@ div[role="listbox"] {{
     font-family: 'IBM Plex Mono', monospace;
     font-size: 0.72rem;
     font-weight: 600;
-    color: #0E1116;
+    color: #141413;
 }}
 </style>
 """
