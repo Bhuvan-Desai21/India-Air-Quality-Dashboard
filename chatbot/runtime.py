@@ -12,6 +12,10 @@ import asyncio
 import threading
 from typing import Any, Coroutine
 
+# Bound every call so a slow/unresponsive MCP endpoint cannot hang a Streamlit worker
+# thread forever. Generous enough for a cold Hugging Face Space start plus a few tool calls.
+DEFAULT_TIMEOUT = 120.0
+
 
 class _BackgroundLoop:
     def __init__(self) -> None:
@@ -19,8 +23,9 @@ class _BackgroundLoop:
         self._thread = threading.Thread(target=self._loop.run_forever, daemon=True)
         self._thread.start()
 
-    def run(self, coro: Coroutine) -> Any:
-        return asyncio.run_coroutine_threadsafe(coro, self._loop).result()
+    def run(self, coro: Coroutine, timeout: float | None) -> Any:
+        # Raises concurrent.futures.TimeoutError if the coroutine exceeds `timeout`.
+        return asyncio.run_coroutine_threadsafe(coro, self._loop).result(timeout)
 
 
 _RUNNER: _BackgroundLoop | None = None
@@ -36,6 +41,9 @@ def get_runner() -> _BackgroundLoop:
     return _RUNNER
 
 
-def run(coro: Coroutine) -> Any:
-    """Run a coroutine on the shared background loop and return its result."""
-    return get_runner().run(coro)
+def run(coro: Coroutine, timeout: float | None = DEFAULT_TIMEOUT) -> Any:
+    """Run a coroutine on the shared background loop and return its result.
+
+    Blocks up to `timeout` seconds; raises concurrent.futures.TimeoutError otherwise.
+    """
+    return get_runner().run(coro, timeout)

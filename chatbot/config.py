@@ -13,7 +13,7 @@ DEFAULT_MODEL = "llama-3.3-70b-versatile"
 
 @dataclass(frozen=True)
 class Settings:
-    groq_api_key: str
+    groq_api_key: str  # validated here; ChatGroq reads it from the env directly
     mcp_auth_token: str
     mcp_url: str
     model: str
