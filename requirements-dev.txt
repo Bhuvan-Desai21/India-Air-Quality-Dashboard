@@ -1,1 +1,4 @@
 pytest>=8.0
+# For scripts/capture_screenshots.py (regenerating README dashboard images).
+# After install: python -m playwright install chromium
+playwright>=1.40
