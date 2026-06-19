@@ -407,11 +407,16 @@ def configure_plotly_theme(fig):
     """
     Format a Plotly figure to fit the premium charcoal technical layout design system.
     """
+    # Preserve any title the chart set; default to "" so title.text is never left
+    # undefined. (A missing text key serializes without `text`, which Streamlit's
+    # client-side Plotly theme bold-wraps into a literal "undefined" title.)
+    existing_title = fig.layout.title.text or ""
     fig.update_layout(
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         font=dict(family="Inter, sans-serif", color=TOKENS["text_secondary"], size=11),
         title=dict(
+            text=existing_title,
             font=dict(family="Space Grotesk, sans-serif", size=14, color=TOKENS["text_primary"]),
             x=0,
             y=0.98
