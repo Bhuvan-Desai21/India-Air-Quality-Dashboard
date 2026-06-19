@@ -23,7 +23,8 @@ later phase, because the AQI and cleaning modules it builds are reused by Phase 
 
 **In scope (Phase 1):**
 - A new testable `pipeline/` package: `aqi.py` (CPCB sub-index AQI), `clean.py` (layered
-  cleaning), `build.py` (Phase-1 transform of existing parquets).
+  cleaning), `report.py` (data-quality report), `build.py` (Phase-1 transform of existing
+  parquets).
 - Recompute AQI for the existing city AND Bangalore-station parquets from their pollutant
   columns, using one consistent CPCB formula.
 - Additive, backward-compatible schema columns (see below). `AQI`/`AQI_Bucket` become the
@@ -86,6 +87,19 @@ Sub-index formula within a bucket:
 `I = (I_hi - I_lo)/(C_hi - C_lo) * (C - C_lo) + I_lo`, rounded to int. A concentration above
 the top bucket caps at 500.
 
+**Breakpoints verified against official CPCB documentation (2026-06-19).** The lower five
+bands (Good→Very Poor) for every pollutant above were confirmed to match the official CPCB
+National AQI table exactly — see [CPCB About_AQI](https://www.cpcb.nic.in/National-Air-Quality-Index/)
+and the [AQI Hub India reference](https://aqihub.info/indices/india). **Caveat:** the
+official **Severe (401–500) band is open-ended** in CPCB's documentation (listed as "250+",
+"430+", "1600+", etc. with no upper concentration bound). Linear interpolation needs an upper
+bound, so the Severe-band `C_hi` values above (PM2.5 500, PM10 600, NO2 1000, O3 1000, CO 50,
+SO2 2620, NH3 2400) are an explicit, documented engineering choice; any concentration at or
+beyond `C_hi` clamps the sub-index to **500**. This only affects the exact number (e.g. 470
+vs 490) of already-Severe days — never the category — and bounds recomputed AQI to ≤500
+(fixing the station 727). Implementation must keep these breakpoints in one named constant so
+they can be re-verified/adjusted in isolation.
+
 **CPCB validity rule:** AQI requires **at least 3 pollutants** present AND at least one of
 PM2.5/PM10. Otherwise AQI is `null` and `dominant_pollutant` is `null` (Bucket "Unknown").
 
@@ -125,10 +139,44 @@ AQI is recomputed AFTER cleaning, so a bad pollutant never inflates AQI.
 4. Recompute `AQI`, `dominant_pollutant` row-wise from cleaned pollutants via
    `compute_aqi`. Recompute `AQI_Bucket` from new `AQI`.
 5. Set `source="kaggle_cpcb"`.
-6. Write parquets back (same paths). Print the data-quality report.
+6. Write parquets back (same paths). Build the data-quality report via `pipeline.report`
+   (print it AND write `reports/data_quality_phase1.md`).
 
 A `--report-only` flag computes and prints the report WITHOUT writing, for the pre-ship
 human review (tread-lightly gate).
+
+### Data-quality report (`pipeline/report.py`)
+
+`build_report(before_df, after_df) -> str` produces a markdown report, printed to the
+console AND written to `reports/data_quality_phase1.md` (committed, so the review is
+auditable). Computed separately for the city and station parquets. It MUST contain these
+explicit metrics:
+
+**Volume & coverage**
+- Total rows; date range (must be unchanged); cities/stations covered (must be unchanged).
+
+**AQI change**
+- Rows where both old and new AQI are non-null; of those, count & % where AQI changed.
+- Absolute AQI delta `|new − old|`: mean, median, p90, p99, and max.
+- Rows where AQI flipped null→value and value→null (with counts).
+- Confirm `new AQI.max() <= 500` (the 727 fix) — fail the report loudly if not.
+
+**Bucket migration**
+- A bucket-migration matrix: counts of `old AQI_Bucket → new AQI_Bucket` (rows that changed
+  category), so reviewers see which categories shifted.
+
+**Cleaning actions**
+- Per-pollutant count of values nulled by physical bounds (`imputed_bound`).
+- Count & % of rows flagged `flagged_spike`, broken down per city/station.
+
+**Largest-change analysis (required)**
+- A table of the **top-20 rows by `|ΔAQI|`**, each showing City/Station, Date, old AQI, new
+  AQI, Δ, new `dominant_pollutant`, and the contributing pollutant concentrations — so a
+  human can judge whether each large change is justified (e.g. an inconsistent original AQI
+  being corrected) rather than a new error.
+- A per-city/station summary: mean Δ and max Δ AQI.
+
+This report is what the human reads at the deploy gate before anything is shipped.
 
 ## Consumers (no breaking changes)
 
@@ -145,6 +193,20 @@ could later read the new `dominant_pollutant` column. Not done in Phase 1.
 - `tests/test_clean.py`: a 5000 µg/m³ PM2.5 is nulled + flagged `imputed_bound`; a single
   isolated 10× spike is flagged `flagged_spike` (value retained); a sustained multi-day high
   plateau is NOT flagged; MAD==0 window produces no flags.
+- **`tests/test_pipeline_regression.py` (end-to-end fixture — required):** a small committed
+  fixture `tests/fixtures/sample_city_day.parquet` (~12 hand-crafted rows for 2 cities) that
+  deliberately covers every transform path:
+  - a normal multi-pollutant row with a **hand-computed expected AQI + dominant_pollutant**,
+  - a row with an impossible pollutant (PM2.5 = 5000) → nulled, `quality_flag` contains
+    `imputed_bound`,
+  - an isolated single-day spike → `flagged_spike`, value retained,
+  - a row with <3 pollutants → AQI/`dominant_pollutant` null, Bucket `Unknown`,
+  - a row whose original AQI is inconsistent with its pollutants → corrected new AQI.
+  The test runs the FULL `rebuild_phase1` transform on the fixture (not the real data) and
+  asserts the entire output frame: every expected column present, exact AQI/Bucket/
+  `dominant_pollutant`/`quality_flag`/`source` values, `AQI_cpcb_original` equals the input
+  AQI, and **idempotency** (running the transform twice yields the same result). This locks
+  the whole Phase-1 pipeline against regressions, not just the units.
 - Existing `tests/test_mcp_tools.py` must still pass (recompute keeps AQI ∈ [0,500] and the
   schema intact).
 
@@ -159,12 +221,16 @@ could later read the new `dominant_pollutant` column. Not done in Phase 1.
 
 ## Verification (Done criteria)
 
-1. `pytest -q` green (new aqi/clean tests + existing suite).
+1. `pytest -q` green: the new `test_aqi.py`, `test_clean.py`, the end-to-end
+   `test_pipeline_regression.py` (fixture), and the existing suite.
 2. Recomputed parquets: `AQI.max() <= 500` for BOTH city and station; every existing column
    still present; new columns populated; `AQI_cpcb_original` retains the old values.
-3. Data-quality report shows the recompute is sane (no mass-nulling of AQI; flagged rows a
-   small %; distribution shift explainable).
-4. HF Space verified serving (11 tools, parquets load).
+3. `reports/data_quality_phase1.md` exists with all required metrics + the top-20
+   largest-change table, and shows the recompute is sane (no mass-nulling of AQI; flagged
+   rows a small %; distribution shift explainable).
+4. AQI breakpoints in code match the verified CPCB table (lower bands) with the documented
+   Severe-band convention; held in one named constant.
+5. HF Space verified serving (11 tools, parquets load).
 
 ## Watch-outs (tread lightly)
 
