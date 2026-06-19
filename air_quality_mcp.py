@@ -521,6 +521,62 @@ def health_advisory(city: str, date: str | None = None) -> dict:
     }
 
 
+@mcp.tool()
+def compare_to_standard(city: str, pollutant: str) -> dict:
+    """Compare a city's latest pollutant level to WHO and CPCB safe limits.
+
+    Answers "how far over the safe limit is Delhi's PM2.5?". Uses the city's most
+    recent non-null reading for the pollutant. AQI is not a pollutant and is rejected.
+
+    Args:
+        city: City name (case-insensitive).
+        pollutant: One of pm25, pm10, no2, so2, o3, co, nh3 (NOT aqi).
+
+    Returns {"city", "pollutant", "value", "as_of", "unit", "who_limit",
+    "who_multiple", "cpcb_limit", "cpcb_multiple", "verdict"}. A limit that does not
+    exist for the pollutant comes back null with a null multiple. Unknown city or a
+    non-pollutant input → {"error": ...}.
+    """
+    canon = _resolve_city(city)
+    if canon is None:
+        return {"error": f"Unknown city '{city}'. Call list_cities for valid names."}
+    col = _resolve_metric(pollutant)
+    if col is None or col == "AQI":
+        return {
+            "error": f"'{pollutant}' is not a pollutant. Choose one of "
+            "pm25, pm10, no2, so2, o3, co, nh3."
+        }
+    value, as_of = _latest_valid(_city_frame(canon), col)
+    if value is None:
+        return {"error": f"No valid {pollutant} readings for {canon}."}
+
+    who, cpcb = WHO_LIMITS.get(col), CPCB_LIMITS.get(col)
+    who_mult = round(value / who, 2) if who else None
+    cpcb_mult = round(value / cpcb, 2) if cpcb else None
+    if who_mult is not None:
+        verdict = (
+            f"{who_mult}x the WHO annual limit" if who_mult > 1 else "within the WHO annual limit"
+        )
+    elif cpcb_mult is not None:
+        verdict = (
+            f"{cpcb_mult}x the CPCB annual limit" if cpcb_mult > 1 else "within the CPCB annual limit"
+        )
+    else:
+        verdict = "no annual limit defined for this pollutant"
+    return {
+        "city": canon,
+        "pollutant": col,
+        "value": value,
+        "as_of": as_of,
+        "unit": UNITS.get(col),
+        "who_limit": who,
+        "who_multiple": who_mult,
+        "cpcb_limit": cpcb,
+        "cpcb_multiple": cpcb_mult,
+        "verdict": verdict,
+    }
+
+
 def _run_http() -> None:
     """Serve over streamable-HTTP for remote hosting (e.g. Hugging Face Spaces).
 
