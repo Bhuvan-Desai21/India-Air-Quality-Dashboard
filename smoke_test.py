@@ -34,6 +34,8 @@ if __name__ == "__main__":
     show("compare_to_standard('Delhi', 'pm25')", srv.compare_to_standard("Delhi", "pm25"))
     show("compare_to_standard('Delhi', 'aqi')  # aqi rejected",
          srv.compare_to_standard("Delhi", "aqi"))
+    show("station_breakdown(order='desc')  # Bengaluru worst-first",
+         srv.station_breakdown(order="desc"))
 
     # Error handling
     show("get_aqi('Gotham')  # unknown city", srv.get_aqi("Gotham"))

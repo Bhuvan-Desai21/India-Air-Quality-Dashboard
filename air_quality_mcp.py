@@ -577,6 +577,44 @@ def compare_to_standard(city: str, pollutant: str) -> dict:
     }
 
 
+@mcp.tool()
+def station_breakdown(metric: str = "aqi", order: str = "desc", n: int = 10) -> dict:
+    """Rank Bengaluru's neighbourhood monitoring stations by a metric (hyperlocal).
+
+    Answers "which part of Bengaluru has the worst air?". Uses each station's latest
+    valid reading. Stations include Silk Board, Peenya, BTM Layout, Hebbal, etc.
+
+    Args:
+        metric: One of aqi, pm25, pm10, no2, so2, o3, co, nh3. Defaults to aqi.
+        order: "desc" for most polluted first (worst), "asc" for cleanest first.
+        n: How many stations to return (clamped 1-20). Defaults to 10 (all of them).
+
+    Returns {"scope": "Bengaluru stations", "metric", "order",
+    "ranking": [{station, value, as_of}...]}. Stations with no valid reading are
+    omitted. Unknown metric or order → {"error": ...}.
+    """
+    col = _resolve_metric(metric)
+    if col is None:
+        return {"error": f"Unknown metric '{metric}'. Valid metrics: {VALID_METRICS}."}
+    order = order.strip().lower()
+    if order not in ("desc", "asc"):
+        return {"error": f"Unknown order '{order}'. Use 'desc' or 'asc'."}
+    n = max(1, min(int(n), 20))
+
+    entries = []
+    for station in _station_df["StationShort"].unique():
+        v, d = _latest_valid(_station_frame(station), col)
+        if v is not None:
+            entries.append({"station": station, "value": v, "as_of": d})
+    entries.sort(key=lambda e: e["value"], reverse=(order == "desc"))
+    return {
+        "scope": "Bengaluru stations",
+        "metric": metric.lower(),
+        "order": order,
+        "ranking": entries[:n],
+    }
+
+
 def _run_http() -> None:
     """Serve over streamable-HTTP for remote hosting (e.g. Hugging Face Spaces).
 
