@@ -28,6 +28,7 @@ if __name__ == "__main__":
     show("trend('Delhi', 'pm25', 5)", srv.trend("Delhi", "pm25", 5))
     show("seasonal_breakdown('Delhi')", srv.seasonal_breakdown("Delhi"))
     show("yearly_summary('Delhi', 'pm25')", srv.yearly_summary("Delhi", "pm25"))
+    show("lockdown_impact('Delhi')", srv.lockdown_impact("Delhi"))
 
     # Error handling
     show("get_aqi('Gotham')  # unknown city", srv.get_aqi("Gotham"))

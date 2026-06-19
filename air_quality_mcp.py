@@ -442,6 +442,52 @@ def yearly_summary(city: str, metric: str = "aqi") -> dict:
     return {"city": canon, "metric": metric.lower(), "years": years, "direction": direction}
 
 
+@mcp.tool()
+def lockdown_impact(city: str, metric: str = "aqi") -> dict:
+    """Compare a city's metric in Mar-Jun 2019 vs Mar-Jun 2020 (the COVID lockdown).
+
+    India's nationwide lockdown began 25 Mar 2020. This compares the same months
+    (March-June) one year apart to isolate the lockdown's effect on air quality.
+
+    Args:
+        city: City name (case-insensitive).
+        metric: One of aqi, pm25, pm10, no2, so2, o3, co, nh3. Defaults to aqi.
+
+    Returns {"city", "metric", "window": "Mar-Jun", "before": {year, avg, n},
+    "after": {year, avg, n}, "change_pct", "direction"}. change_pct/direction are null
+    (with a note) if either year lacks data in the window. Unknown city/metric → error.
+    """
+    canon = _resolve_city(city)
+    if canon is None:
+        return {"error": f"Unknown city '{city}'. Call list_cities for valid names."}
+    col = _resolve_metric(metric)
+    if col is None:
+        return {"error": f"Unknown metric '{metric}'. Valid metrics: {VALID_METRICS}."}
+    window = _city_frame(canon)
+    window = window[window["Month"].isin([3, 4, 5, 6])].dropna(subset=[col])
+
+    def side(year: int) -> dict | None:
+        s = window[window["Year"] == year][col]
+        if s.empty:
+            return None
+        return {"year": year, "avg": round(float(s.mean()), 2), "n": int(s.count())}
+
+    before, after = side(2019), side(2020)
+    result: dict = {
+        "city": canon, "metric": metric.lower(), "window": "Mar-Jun",
+        "before": before, "after": after,
+    }
+    if before and after and before["avg"] != 0:
+        change = (after["avg"] - before["avg"]) / before["avg"] * 100
+        result["change_pct"] = round(change, 1)
+        result["direction"] = "fell" if change < 0 else "rose" if change > 0 else "flat"
+    else:
+        result["change_pct"] = None
+        result["direction"] = None
+        result["note"] = "Need both 2019 and 2020 data in Mar-Jun to compute change."
+    return result
+
+
 def _run_http() -> None:
     """Serve over streamable-HTTP for remote hosting (e.g. Hugging Face Spaces).
 
