@@ -222,6 +222,7 @@ with tab1:
         color="City",
         points=False,
         category_orders={"City": city_avgs["City"].tolist()},
+        color_discrete_sequence=[TOKENS["teal"]],
         labels={pollutant: f"{pollutant} ({UNITS[pollutant]})"},
     )
     fig_box = configure_plotly_theme(fig_box)

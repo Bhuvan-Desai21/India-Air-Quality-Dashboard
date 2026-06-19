@@ -122,7 +122,7 @@ with col_left:
     
     map_data = city_stats.merge(city_coords, on="City")
     map_data["bucket"] = map_data["avg_aqi"].apply(aqi_bucket_label)
-    map_data["color"] = map_data["bucket"].map(AQI_COLORS) + "99"
+    map_data["color"] = map_data["bucket"].map(AQI_COLORS).fillna(TOKENS["text_muted"]) + "99"
     map_data["size"] = map_data["avg_aqi"] * 80
     
     st.map(map_data, latitude="lat", longitude="lon", color="color", size="size")

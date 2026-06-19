@@ -122,7 +122,7 @@ with col_left:
     map_coords_df = pd.DataFrame(coords_list)
     map_data = station_avg.merge(map_coords_df, on="StationShort")
     map_data["safety_level"] = map_data["avg_aqi"].apply(get_safety_bucket)
-    map_data["color"] = map_data["safety_level"].map(AQI_COLORS) + "99"
+    map_data["color"] = map_data["safety_level"].map(AQI_COLORS).fillna(TOKENS["text_muted"]) + "99"
     map_data["size"] = map_data["avg_aqi"] * 15
     
     st.map(map_data, latitude="lat", longitude="lon", color="color", size="size")
