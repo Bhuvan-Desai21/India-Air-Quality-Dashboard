@@ -26,6 +26,8 @@ if __name__ == "__main__":
     show("compare_cities(['Delhi','Mumbai','Atlantis'], 'pm25')",
          srv.compare_cities(["Delhi", "Mumbai", "Atlantis"], "pm25"))
     show("trend('Delhi', 'pm25', 5)", srv.trend("Delhi", "pm25", 5))
+    show("seasonal_breakdown('Delhi')", srv.seasonal_breakdown("Delhi"))
+    show("yearly_summary('Delhi', 'pm25')", srv.yearly_summary("Delhi", "pm25"))
 
     # Error handling
     show("get_aqi('Gotham')  # unknown city", srv.get_aqi("Gotham"))

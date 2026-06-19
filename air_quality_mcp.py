@@ -352,6 +352,96 @@ def rank_cities(metric: str = "aqi", n: int = 5, order: str = "desc") -> dict:
     return {"metric": metric.lower(), "order": order, "ranking": entries[:n]}
 
 
+@mcp.tool()
+def seasonal_breakdown(city: str, metric: str = "aqi") -> dict:
+    """Average a metric by season for a city: Winter, Spring, Monsoon, Post-Monsoon.
+
+    Good for "is Delhi's pollution worse in winter?". Indian seasons, not calendar
+    quarters: Winter (Dec-Feb), Spring (Mar-Apr), Monsoon (Jun-Sep), Post-Monsoon
+    (Oct-Nov), aggregated across all years 2015-2020.
+
+    Args:
+        city: City name (case-insensitive).
+        metric: One of aqi, pm25, pm10, no2, so2, o3, co, nh3. Defaults to aqi.
+
+    Returns {"city", "metric", "seasons": {season: {avg, min, max, n}}, "peak_season",
+    "cleanest_season"}. Seasons with no data are omitted. Unknown city/metric → error.
+    """
+    canon = _resolve_city(city)
+    if canon is None:
+        return {"error": f"Unknown city '{city}'. Call list_cities for valid names."}
+    col = _resolve_metric(metric)
+    if col is None:
+        return {"error": f"Unknown metric '{metric}'. Valid metrics: {VALID_METRICS}."}
+    frame = _city_frame(canon).dropna(subset=[col])
+    if frame.empty:
+        return {"error": f"No valid {metric} readings for {canon}."}
+
+    seasons: dict[str, dict] = {}
+    for season in SEASON_ORDER:
+        s = frame[frame["Season"] == season][col]
+        if s.empty:
+            continue
+        seasons[season] = {
+            "avg": round(float(s.mean()), 2),
+            "min": round(float(s.min()), 2),
+            "max": round(float(s.max()), 2),
+            "n": int(s.count()),
+        }
+    if not seasons:
+        return {"error": f"No seasonal data for {canon}."}
+    peak = max(seasons, key=lambda k: seasons[k]["avg"])
+    cleanest = min(seasons, key=lambda k: seasons[k]["avg"])
+    return {
+        "city": canon,
+        "metric": metric.lower(),
+        "seasons": seasons,
+        "peak_season": peak,
+        "cleanest_season": cleanest,
+    }
+
+
+@mcp.tool()
+def yearly_summary(city: str, metric: str = "aqi") -> dict:
+    """Year-by-year averages (2015-2020) for a metric in a city.
+
+    Answers "is Delhi's air getting better or worse over the years?".
+
+    Args:
+        city: City name (case-insensitive).
+        metric: One of aqi, pm25, pm10, no2, so2, o3, co, nh3. Defaults to aqi.
+
+    Returns {"city", "metric", "years": [{year, avg, min, max, n}...], "direction"}
+    where direction compares the first vs last year with data. Note 2020 is a partial
+    year (data ends 2020-07-01). Unknown city/metric → error.
+    """
+    canon = _resolve_city(city)
+    if canon is None:
+        return {"error": f"Unknown city '{city}'. Call list_cities for valid names."}
+    col = _resolve_metric(metric)
+    if col is None:
+        return {"error": f"Unknown metric '{metric}'. Valid metrics: {VALID_METRICS}."}
+    frame = _city_frame(canon).dropna(subset=[col])
+    if frame.empty:
+        return {"error": f"No valid {metric} readings for {canon}."}
+
+    years = []
+    for year, g in frame.groupby("Year"):
+        years.append({
+            "year": int(year),
+            "avg": round(float(g[col].mean()), 2),
+            "min": round(float(g[col].min()), 2),
+            "max": round(float(g[col].max()), 2),
+            "n": int(g[col].count()),
+        })
+    years.sort(key=lambda y: y["year"])
+    direction = (
+        "rising" if years[-1]["avg"] > years[0]["avg"]
+        else "falling" if years[-1]["avg"] < years[0]["avg"] else "flat"
+    )
+    return {"city": canon, "metric": metric.lower(), "years": years, "direction": direction}
+
+
 def _run_http() -> None:
     """Serve over streamable-HTTP for remote hosting (e.g. Hugging Face Spaces).
 
