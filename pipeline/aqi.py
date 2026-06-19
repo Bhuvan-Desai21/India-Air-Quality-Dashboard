@@ -37,6 +37,10 @@ def sub_index(pollutant: str, concentration: float | None) -> int | None:
         return None
     table = BREAKPOINTS[pollutant]
     c = float(concentration)
+    # NaN-safety is load-bearing: a NaN concentration fails `c < 0`, every bucket's
+    # `c_lo <= c <= c_hi`, and the `c > top` clamp, so it falls through to `return None`
+    # (a nulled pollutant is dropped from the AQI, not poisoning it). Do NOT rewrite the
+    # guard as a truthiness check (`if not concentration`) — that would mishandle 0.0/NaN.
     for c_lo, c_hi, i_lo, i_hi in table:
         if c_lo <= c <= c_hi:
             return round((i_hi - i_lo) / (c_hi - c_lo) * (c - c_lo) + i_lo)

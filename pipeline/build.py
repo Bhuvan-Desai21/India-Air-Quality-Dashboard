@@ -46,6 +46,9 @@ def rebuild_frame(df: pd.DataFrame, group_col: str) -> pd.DataFrame:
         return aqi.compute_aqi({p: row.get(p) for p in aqi.BREAKPOINTS})
 
     results = df.apply(_aqi, axis=1)
+    # AQI dtype is int64 if every row is valid, else float64 (None -> NaN). Real data
+    # always has "Unknown" rows, so production output is float64 — matching the original
+    # AQI column and the numeric MCP consumers. Don't assert int on real data.
     df["AQI"] = [r[0] for r in results]
     df["dominant_pollutant"] = [r[1] for r in results]
     df["AQI_Bucket"] = df["AQI"].apply(classify_aqi)
