@@ -78,6 +78,80 @@ def _coverage() -> dict[str, str]:
     }
 
 
+# --- Station (Bengaluru hyperlocal) data layer --------------------------------
+# A second cleaned parquet: 10 Bengaluru monitoring stations, same pollutant columns.
+# Loaded once at import, path resolved from __file__ like the city frame.
+_STATION_PATH = (
+    Path(__file__).resolve().parent / "data" / "processed" / "station_day_blr_clean.parquet"
+)
+_station_df = pd.read_parquet(_STATION_PATH)
+_station_df["Date"] = pd.to_datetime(_station_df["Date"])
+
+
+def _station_frame(station: str) -> pd.DataFrame:
+    return _station_df[_station_df["StationShort"] == station]
+
+
+# --- Constants for the analytical tools ---------------------------------------
+SEASON_ORDER: list[str] = ["Winter", "Spring", "Monsoon", "Post-Monsoon"]
+
+# WHO 2021 annual guideline values (µg/m³); None where WHO sets no annual value here.
+WHO_LIMITS: dict[str, float | None] = {
+    "PM2.5": 5.0, "PM10": 15.0, "NO2": 10.0, "SO2": None, "O3": 60.0, "CO": None, "NH3": None,
+}
+# CPCB annual standards (India), µg/m³ (CO would be mg/m³ but has no annual std here).
+CPCB_LIMITS: dict[str, float | None] = {
+    "PM2.5": 40.0, "PM10": 60.0, "NO2": 40.0, "SO2": 50.0, "O3": None, "CO": None, "NH3": None,
+}
+UNITS: dict[str, str] = {
+    "PM2.5": "µg/m³", "PM10": "µg/m³", "NO2": "µg/m³", "SO2": "µg/m³",
+    "O3": "µg/m³", "CO": "mg/m³", "NH3": "µg/m³",
+}
+
+# CPCB-band health guidance: category -> (advisory, who is most at risk).
+ADVISORY: dict[str, tuple[str, str]] = {
+    "Good": ("Air quality is good; safe for everyone.", "None."),
+    "Satisfactory": (
+        "Acceptable air; very sensitive individuals may feel minor discomfort.",
+        "Highly sensitive people.",
+    ),
+    "Moderate": (
+        "May cause breathing discomfort to people with lung or heart disease, "
+        "children, and older adults.",
+        "Asthma/heart patients, children, the elderly.",
+    ),
+    "Poor": (
+        "Breathing discomfort on prolonged exposure; sensitive groups should limit "
+        "outdoor exertion.",
+        "Most people on prolonged exposure.",
+    ),
+    "Very Poor": (
+        "Respiratory illness on prolonged exposure; avoid outdoor activity.",
+        "Everyone, seriously for sensitive groups.",
+    ),
+    "Severe": (
+        "Serious health impact even on light activity; stay indoors.",
+        "Everyone.",
+    ),
+    "Unknown": ("No health category available for this reading.", "Unknown."),
+}
+
+
+def _aqi_category(aqi: float) -> str:
+    """Map a numeric AQI to its CPCB band (matches the dashboard buckets)."""
+    if aqi <= 50:
+        return "Good"
+    if aqi <= 100:
+        return "Satisfactory"
+    if aqi <= 200:
+        return "Moderate"
+    if aqi <= 300:
+        return "Poor"
+    if aqi <= 400:
+        return "Very Poor"
+    return "Severe"
+
+
 # --- MCP server ---------------------------------------------------------------
 # host/port are read from the environment now (harmless for stdio) so the http
 # transport needs no code change -- only MCP_TRANSPORT=http at launch.
@@ -276,6 +350,272 @@ def rank_cities(metric: str = "aqi", n: int = 5, order: str = "desc") -> dict:
             entries.append({"city": canon, "value": v, "as_of": d})
     entries.sort(key=lambda e: e["value"], reverse=(order == "desc"))
     return {"metric": metric.lower(), "order": order, "ranking": entries[:n]}
+
+
+@mcp.tool()
+def seasonal_breakdown(city: str, metric: str = "aqi") -> dict:
+    """Average a metric by season for a city: Winter, Spring, Monsoon, Post-Monsoon.
+
+    Good for "is Delhi's pollution worse in winter?". Indian seasons, not calendar
+    quarters: Winter (Dec-Feb), Spring (Mar-May), Monsoon (Jun-Sep), Post-Monsoon
+    (Oct-Nov), aggregated across all years 2015-2020.
+
+    Args:
+        city: City name (case-insensitive).
+        metric: One of aqi, pm25, pm10, no2, so2, o3, co, nh3. Defaults to aqi.
+
+    Returns {"city", "metric", "seasons": {season: {avg, min, max, n}}, "peak_season",
+    "cleanest_season"}. Seasons with no data are omitted. Unknown city/metric → error.
+    """
+    canon = _resolve_city(city)
+    if canon is None:
+        return {"error": f"Unknown city '{city}'. Call list_cities for valid names."}
+    col = _resolve_metric(metric)
+    if col is None:
+        return {"error": f"Unknown metric '{metric}'. Valid metrics: {VALID_METRICS}."}
+    frame = _city_frame(canon).dropna(subset=[col])
+    if frame.empty:
+        return {"error": f"No valid {metric} readings for {canon}."}
+
+    seasons: dict[str, dict] = {}
+    for season in SEASON_ORDER:
+        s = frame[frame["Season"] == season][col]
+        if s.empty:
+            continue
+        seasons[season] = {
+            "avg": round(float(s.mean()), 2),
+            "min": round(float(s.min()), 2),
+            "max": round(float(s.max()), 2),
+            "n": int(s.count()),
+        }
+    if not seasons:
+        return {"error": f"No seasonal data for {canon}."}
+    peak = max(seasons, key=lambda k: seasons[k]["avg"])
+    cleanest = min(seasons, key=lambda k: seasons[k]["avg"])
+    return {
+        "city": canon,
+        "metric": metric.lower(),
+        "seasons": seasons,
+        "peak_season": peak,
+        "cleanest_season": cleanest,
+    }
+
+
+@mcp.tool()
+def yearly_summary(city: str, metric: str = "aqi") -> dict:
+    """Year-by-year averages (2015-2020) for a metric in a city.
+
+    Answers "is Delhi's air getting better or worse over the years?".
+
+    Args:
+        city: City name (case-insensitive).
+        metric: One of aqi, pm25, pm10, no2, so2, o3, co, nh3. Defaults to aqi.
+
+    Returns {"city", "metric", "years": [{year, avg, min, max, n}...], "direction"}
+    where direction compares the first vs last year with data. Note 2020 is a partial
+    year (data ends 2020-07-01). Unknown city/metric → error.
+    """
+    canon = _resolve_city(city)
+    if canon is None:
+        return {"error": f"Unknown city '{city}'. Call list_cities for valid names."}
+    col = _resolve_metric(metric)
+    if col is None:
+        return {"error": f"Unknown metric '{metric}'. Valid metrics: {VALID_METRICS}."}
+    frame = _city_frame(canon).dropna(subset=[col])
+    if frame.empty:
+        return {"error": f"No valid {metric} readings for {canon}."}
+
+    years = []
+    for year, g in frame.groupby("Year"):
+        years.append({
+            "year": int(year),
+            "avg": round(float(g[col].mean()), 2),
+            "min": round(float(g[col].min()), 2),
+            "max": round(float(g[col].max()), 2),
+            "n": int(g[col].count()),
+        })
+    years.sort(key=lambda y: y["year"])
+    direction = (
+        "rising" if years[-1]["avg"] > years[0]["avg"]
+        else "falling" if years[-1]["avg"] < years[0]["avg"] else "flat"
+    )
+    return {"city": canon, "metric": metric.lower(), "years": years, "direction": direction}
+
+
+@mcp.tool()
+def lockdown_impact(city: str, metric: str = "aqi") -> dict:
+    """Compare a city's metric in Mar-Jun 2019 vs Mar-Jun 2020 (the COVID lockdown).
+
+    India's nationwide lockdown began 25 Mar 2020. This compares the same months
+    (March-June) one year apart to isolate the lockdown's effect on air quality.
+
+    Args:
+        city: City name (case-insensitive).
+        metric: One of aqi, pm25, pm10, no2, so2, o3, co, nh3. Defaults to aqi.
+
+    Returns {"city", "metric", "window": "Mar-Jun", "before": {year, avg, n},
+    "after": {year, avg, n}, "change_pct", "direction"}. change_pct/direction are null
+    (with a note) if either year lacks data in the window. Unknown city/metric → error.
+    """
+    canon = _resolve_city(city)
+    if canon is None:
+        return {"error": f"Unknown city '{city}'. Call list_cities for valid names."}
+    col = _resolve_metric(metric)
+    if col is None:
+        return {"error": f"Unknown metric '{metric}'. Valid metrics: {VALID_METRICS}."}
+    window = _city_frame(canon)
+    window = window[window["Month"].isin([3, 4, 5, 6])].dropna(subset=[col])
+
+    def side(year: int) -> dict | None:
+        s = window[window["Year"] == year][col]
+        if s.empty:
+            return None
+        return {"year": year, "avg": round(float(s.mean()), 2), "n": int(s.count())}
+
+    before, after = side(2019), side(2020)
+    result: dict = {
+        "city": canon, "metric": metric.lower(), "window": "Mar-Jun",
+        "before": before, "after": after,
+    }
+    if before and after and before["avg"] != 0:
+        change = (after["avg"] - before["avg"]) / before["avg"] * 100
+        result["change_pct"] = round(change, 1)
+        result["direction"] = "fell" if change < 0 else "rose" if change > 0 else "flat"
+    else:
+        result["change_pct"] = None
+        result["direction"] = None
+        result["note"] = "Need both 2019 and 2020 data in Mar-Jun to compute change."
+    return result
+
+
+@mcp.tool()
+def health_advisory(city: str, date: str | None = None) -> dict:
+    """Plain-language health guidance for a city's air quality on a day.
+
+    Resolves the AQI exactly like get_aqi (latest valid reading, or a given
+    YYYY-MM-DD date), then maps it to its CPCB category and the recommended
+    precautions plus who is most at risk.
+
+    Args:
+        city: City name (case-insensitive).
+        date: Optional "YYYY-MM-DD"; omitted → latest valid AQI day for the city.
+
+    Returns {"city", "as_of", "aqi", "category", "advisory", "sensitive_groups"}.
+    Unknown city / no reading → {"error": ...} (same shape as get_aqi).
+    """
+    reading = get_aqi(city, date)
+    if "error" in reading:
+        return reading
+    aqi = reading["aqi"]
+    if aqi is None:
+        return {"error": f"No AQI value to advise on for {reading['city']}."}
+    category = reading.get("aqi_category") or _aqi_category(aqi)
+    advisory, groups = ADVISORY.get(category, ADVISORY["Unknown"])
+    return {
+        "city": reading["city"],
+        "as_of": reading["as_of"],
+        "aqi": aqi,
+        "category": category,
+        "advisory": advisory,
+        "sensitive_groups": groups,
+    }
+
+
+@mcp.tool()
+def compare_to_standard(city: str, pollutant: str) -> dict:
+    """Compare a city's latest pollutant level to WHO and CPCB safe limits.
+
+    Answers "how far over the safe limit is Delhi's PM2.5?". Uses the city's most
+    recent non-null reading for the pollutant. AQI is not a pollutant and is rejected.
+    Note: this compares a single day's reading against the WHO/CPCB *annual-mean*
+    guidelines, so a one-day multiple over the limit is not the same as exceeding the
+    annual standard -- treat it as "today's level vs the annual safe average".
+
+    Args:
+        city: City name (case-insensitive).
+        pollutant: One of pm25, pm10, no2, so2, o3, co, nh3 (NOT aqi).
+
+    Returns {"city", "pollutant", "value", "as_of", "unit", "who_limit",
+    "who_multiple", "cpcb_limit", "cpcb_multiple", "verdict"}. A limit that does not
+    exist for the pollutant comes back null with a null multiple. Unknown city or a
+    non-pollutant input → {"error": ...}.
+    """
+    canon = _resolve_city(city)
+    if canon is None:
+        return {"error": f"Unknown city '{city}'. Call list_cities for valid names."}
+    col = _resolve_metric(pollutant)
+    if col is None or col == "AQI":
+        return {
+            "error": f"'{pollutant}' is not a pollutant. Choose one of "
+            "pm25, pm10, no2, so2, o3, co, nh3."
+        }
+    value, as_of = _latest_valid(_city_frame(canon), col)
+    if value is None:
+        return {"error": f"No valid {pollutant} readings for {canon}."}
+
+    who, cpcb = WHO_LIMITS.get(col), CPCB_LIMITS.get(col)
+    who_mult = round(value / who, 2) if who else None
+    cpcb_mult = round(value / cpcb, 2) if cpcb else None
+    if who_mult is not None:
+        verdict = (
+            f"{who_mult}x the WHO annual limit" if who_mult > 1 else "within the WHO annual limit"
+        )
+    elif cpcb_mult is not None:
+        verdict = (
+            f"{cpcb_mult}x the CPCB annual limit" if cpcb_mult > 1 else "within the CPCB annual limit"
+        )
+    else:
+        verdict = "no annual limit defined for this pollutant"
+    return {
+        "city": canon,
+        "pollutant": col,
+        "value": value,
+        "as_of": as_of,
+        "unit": UNITS.get(col),
+        "who_limit": who,
+        "who_multiple": who_mult,
+        "cpcb_limit": cpcb,
+        "cpcb_multiple": cpcb_mult,
+        "verdict": verdict,
+    }
+
+
+@mcp.tool()
+def station_breakdown(metric: str = "aqi", order: str = "desc", n: int = 10) -> dict:
+    """Rank Bengaluru's neighbourhood monitoring stations by a metric (hyperlocal).
+
+    Answers "which part of Bengaluru has the worst air?". Uses each station's latest
+    valid reading. Stations include Silk Board, Peenya, BTM Layout, Hebbal, etc.
+
+    Args:
+        metric: One of aqi, pm25, pm10, no2, so2, o3, co, nh3. Defaults to aqi.
+        order: "desc" for most polluted first (worst), "asc" for cleanest first.
+        n: How many stations to return (clamped 1-20). Defaults to 10 (all of them).
+
+    Returns {"scope": "Bengaluru stations", "metric", "order",
+    "ranking": [{station, value, as_of}...]}. Stations with no valid reading are
+    omitted. Unknown metric or order → {"error": ...}.
+    """
+    col = _resolve_metric(metric)
+    if col is None:
+        return {"error": f"Unknown metric '{metric}'. Valid metrics: {VALID_METRICS}."}
+    order = order.strip().lower()
+    if order not in ("desc", "asc"):
+        return {"error": f"Unknown order '{order}'. Use 'desc' or 'asc'."}
+    n = max(1, min(int(n), 20))
+
+    entries = []
+    for station in _station_df["StationShort"].unique():
+        v, d = _latest_valid(_station_frame(station), col)
+        if v is not None:
+            entries.append({"station": station, "value": v, "as_of": d})
+    entries.sort(key=lambda e: e["value"], reverse=(order == "desc"))
+    return {
+        "scope": "Bengaluru stations",
+        "metric": metric.lower(),
+        "order": order,
+        "ranking": entries[:n],
+    }
 
 
 def _run_http() -> None:
