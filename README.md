@@ -54,6 +54,8 @@ To reprocess data, drop the Kaggle `city_day.csv`, `station_day.csv`, `stations.
 
 ![City Overview](assets/screenshots/city-overview.png)
 
+![Pollutant Breakdown](assets/screenshots/pollutants.png)
+
 ## MCP server — 11 tools
 
 The same analysis is exposed as an MCP server (`air_quality_mcp.py`). It reads the cleaned
