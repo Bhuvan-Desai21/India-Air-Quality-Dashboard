@@ -29,6 +29,8 @@ if __name__ == "__main__":
     show("seasonal_breakdown('Delhi')", srv.seasonal_breakdown("Delhi"))
     show("yearly_summary('Delhi', 'pm25')", srv.yearly_summary("Delhi", "pm25"))
     show("lockdown_impact('Delhi')", srv.lockdown_impact("Delhi"))
+    show("health_advisory('Delhi')", srv.health_advisory("Delhi"))
+    show("health_advisory('Gotham')  # unknown city", srv.health_advisory("Gotham"))
 
     # Error handling
     show("get_aqi('Gotham')  # unknown city", srv.get_aqi("Gotham"))

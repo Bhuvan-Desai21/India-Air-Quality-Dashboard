@@ -488,6 +488,39 @@ def lockdown_impact(city: str, metric: str = "aqi") -> dict:
     return result
 
 
+@mcp.tool()
+def health_advisory(city: str, date: str | None = None) -> dict:
+    """Plain-language health guidance for a city's air quality on a day.
+
+    Resolves the AQI exactly like get_aqi (latest valid reading, or a given
+    YYYY-MM-DD date), then maps it to its CPCB category and the recommended
+    precautions plus who is most at risk.
+
+    Args:
+        city: City name (case-insensitive).
+        date: Optional "YYYY-MM-DD"; omitted → latest valid AQI day for the city.
+
+    Returns {"city", "as_of", "aqi", "category", "advisory", "sensitive_groups"}.
+    Unknown city / no reading → {"error": ...} (same shape as get_aqi).
+    """
+    reading = get_aqi(city, date)
+    if "error" in reading:
+        return reading
+    aqi = reading["aqi"]
+    if aqi is None:
+        return {"error": f"No AQI value to advise on for {reading['city']}."}
+    category = reading.get("aqi_category") or _aqi_category(aqi)
+    advisory, groups = ADVISORY.get(category, ADVISORY["Unknown"])
+    return {
+        "city": reading["city"],
+        "as_of": reading["as_of"],
+        "aqi": aqi,
+        "category": category,
+        "advisory": advisory,
+        "sensitive_groups": groups,
+    }
+
+
 def _run_http() -> None:
     """Serve over streamable-HTTP for remote hosting (e.g. Hugging Face Spaces).
 
