@@ -29,7 +29,9 @@ def _ensure_flag(df: pd.DataFrame) -> pd.DataFrame:
 def _add_flag(df: pd.DataFrame, mask: pd.Series, label: str) -> None:
     sel = df.loc[mask, "quality_flag"]
     df.loc[mask, "quality_flag"] = sel.apply(
-        lambda v: label if v == "ok" else f"{v},{label}"
+        lambda v: label if v == "ok"
+        else v if label in v.split(",")
+        else f"{v},{label}"
     )
 
 
