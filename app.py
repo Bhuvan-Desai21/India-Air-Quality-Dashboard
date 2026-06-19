@@ -93,7 +93,7 @@ st.markdown('<div style="margin-top: 16px;"></div>', unsafe_allow_html=True)
 # Timeline ribbons
 st.markdown('<h2 style="font-size: 1.4rem; margin-bottom: 8px;">How Air Quality Looks Across Cities</h2>', unsafe_allow_html=True)
 st.markdown(
-    '<p style="font-size: 0.85rem; color: #A6B1BE; margin-bottom: 20px;">'
+    '<p style="font-size: 0.85rem; color: #b3ada1; margin-bottom: 20px;">'
     'Weekly air quality ratings from 2015 to 2020. You can clearly see how northern cities have much longer periods of bad air compared to coastal cities.'
     '</p>',
     unsafe_allow_html=True
@@ -129,7 +129,7 @@ st.markdown('<h2 style="font-size: 1.4rem; margin-bottom: 16px;">Typical City Pr
 
 f1, f2, f3 = st.columns(3)
 with f1:
-    st.markdown('<p style="font-size:0.75rem; color:#A6B1BE; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">■ Worst Air Quality</p>', unsafe_allow_html=True)
+    st.markdown('<p style="font-size:0.75rem; color:#b3ada1; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">■ Worst Air Quality</p>', unsafe_allow_html=True)
     patna_df = df[df["City"] == "Patna"]
     patna_avg = patna_df["AQI"].mean()
     patna_pm = patna_df["PM2.5"].mean()
@@ -138,14 +138,14 @@ with f1:
     
     # Cleanest Regional Record
 with f2:
-    st.markdown('<p style="font-size:0.75rem; color:#A6B1BE; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">■ India Average</p>', unsafe_allow_html=True)
+    st.markdown('<p style="font-size:0.75rem; color:#b3ada1; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">■ India Average</p>', unsafe_allow_html=True)
     national_pm = df["PM2.5"].mean()
     national_who = national_pm / 5.0
     national_clean = len(df[df["AQI_Bucket"].isin(["Good", "Satisfactory"])]) / len(df[df["AQI"].notna()]) * 100
     render_city_fingerprint("India Average", df["AQI"].mean(), "PM2.5", national_who, national_clean)
     
 with f3:
-    st.markdown('<p style="font-size:0.75rem; color:#A6B1BE; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">■ Best Air Quality</p>', unsafe_allow_html=True)
+    st.markdown('<p style="font-size:0.75rem; color:#b3ada1; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">■ Best Air Quality</p>', unsafe_allow_html=True)
     blr_df = df[df["City"] == "Bengaluru"]
     blr_avg = blr_df["AQI"].mean()
     blr_pm = blr_df["PM2.5"].mean()
@@ -229,7 +229,7 @@ with nav2:
         unsafe_allow_html=True
     )
 
-st.markdown('<div style="margin-top: 24px; border-top: 1px solid #27303A; padding-top: 16px;"></div>', unsafe_allow_html=True)
+st.markdown('<div style="margin-top: 24px; border-top: 1px solid #38352f; padding-top: 16px;"></div>', unsafe_allow_html=True)
 st.caption(
     "Data source: Central Pollution Control Board (CPCB) via Kaggle."
 )

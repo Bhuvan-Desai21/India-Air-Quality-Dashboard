@@ -63,7 +63,7 @@ col_left, col_right = st.columns([4, 6])
 
 with col_left:
     st.markdown('<h3 style="font-size: 1.2rem; margin-top: 0; margin-bottom: 16px;">Weekly Air Quality Over Time</h3>', unsafe_allow_html=True)
-    st.markdown('<p style="font-size: 0.82rem; color: #A6B1BE; margin-bottom: 16px;">Weekly air quality ratings showing how often key cities have safe vs. unsafe air.</p>', unsafe_allow_html=True)
+    st.markdown('<p style="font-size: 0.82rem; color: #b3ada1; margin-bottom: 16px;">Weekly air quality ratings showing how often key cities have safe vs. unsafe air.</p>', unsafe_allow_html=True)
     
     # Render 3 contrasting city ribbons
     ribbon_cities = ["Delhi", "Mumbai", "Bengaluru"]
@@ -84,7 +84,7 @@ with col_left:
 
 with col_right:
     st.markdown('<h3 style="font-size: 1.2rem; margin-top: 0; margin-bottom: 8px;">Air Quality Breakdown</h3>', unsafe_allow_html=True)
-    st.markdown('<p style="font-size: 0.82rem; color: #A6B1BE; margin-bottom: 12px;">Percentage of days spent in each air quality category, from best to worst.</p>', unsafe_allow_html=True)
+    st.markdown('<p style="font-size: 0.82rem; color: #b3ada1; margin-bottom: 12px;">Percentage of days spent in each air quality category, from best to worst.</p>', unsafe_allow_html=True)
     
     total = filtered.groupby("City").size().reset_index(name="Total")
     bucket_counts = (
@@ -132,7 +132,7 @@ with col_right:
     )
     st.plotly_chart(fig, use_container_width=True)
 
-st.markdown('<div style="margin-top: 32px; border-top: 1px solid #27303A; padding-top: 24px;"></div>', unsafe_allow_html=True)
+st.markdown('<div style="margin-top: 32px; border-top: 1px solid #38352f; padding-top: 24px;"></div>', unsafe_allow_html=True)
 
 # AQI reference table
 st.markdown('<h3 style="font-size: 1.25rem; margin-bottom: 12px;">Air Quality Safety Guide</h3>', unsafe_allow_html=True)
@@ -192,7 +192,7 @@ ref_table_html = f"""
 st.markdown(ref_table_html, unsafe_allow_html=True)
 
 # Navigation and footer
-st.markdown('<div style="margin-top: 24px; border-top: 1px solid #27303A; padding-top: 16px;"></div>', unsafe_allow_html=True)
+st.markdown('<div style="margin-top: 24px; border-top: 1px solid #38352f; padding-top: 16px;"></div>', unsafe_allow_html=True)
 st.markdown(
     '👉 **Next: How does air quality differ by neighborhood?** '
     'Check local street-level monitors on the **[Local Neighborhoods (Bangalore Deep Dive)](Bangalore_Deep_Dive)** page.'

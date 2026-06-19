@@ -108,7 +108,7 @@ col_left, col_right = st.columns([6, 4])
 
 with col_left:
     st.markdown('<h3 style="font-size: 1.2rem; margin-top: 0; margin-bottom: 8px;">Neighborhood Map</h3>', unsafe_allow_html=True)
-    st.markdown('<p style="font-size: 0.82rem; color: #A6B1BE; margin-bottom: 12px;">Location of air quality monitors in Bangalore. Larger circles show higher pollution levels.</p>', unsafe_allow_html=True)
+    st.markdown('<p style="font-size: 0.82rem; color: #b3ada1; margin-bottom: 12px;">Location of air quality monitors in Bangalore. Larger circles show higher pollution levels.</p>', unsafe_allow_html=True)
     
     # Map rendering
     coords_list = []
@@ -131,7 +131,7 @@ with col_left:
     
     # Monthly heatmap
     st.markdown('<h3 style="font-size: 1.2rem; margin-top: 0; margin-bottom: 8px;">Neighborhood Heatmap</h3>', unsafe_allow_html=True)
-    st.markdown('<p style="font-size: 0.82rem; color: #A6B1BE; margin-bottom: 12px;">Average AQI by month for each neighborhood sensor, ordered from worst to best.</p>', unsafe_allow_html=True)
+    st.markdown('<p style="font-size: 0.82rem; color: #b3ada1; margin-bottom: 12px;">Average AQI by month for each neighborhood sensor, ordered from worst to best.</p>', unsafe_allow_html=True)
     
     monthly = (
         aqi_filtered.groupby(["StationShort", "Year", "Month"])["AQI"]
@@ -179,7 +179,7 @@ with col_right:
             get_safety_bucket(row["avg_aqi"])
         )
 
-st.markdown('<div style="margin-top: 32px; border-top: 1px solid #27303A; padding-top: 24px;"></div>', unsafe_allow_html=True)
+st.markdown('<div style="margin-top: 32px; border-top: 1px solid #38352f; padding-top: 24px;"></div>', unsafe_allow_html=True)
 
 # Lockdown impact and outliers
 st.markdown(f'<h3 style="font-size: 1.25rem; margin-bottom: 16px;">Lockdown Impact and Outliers</h3>', unsafe_allow_html=True)
@@ -239,7 +239,7 @@ with col_bottom_right:
     )
 
 # Footer
-st.markdown('<div style="margin-top: 24px; border-top: 1px solid #27303A; padding-top: 16px;"></div>', unsafe_allow_html=True)
+st.markdown('<div style="margin-top: 24px; border-top: 1px solid #38352f; padding-top: 16px;"></div>', unsafe_allow_html=True)
 st.markdown(
     'You can choose different years or pollutants in the sidebar. '
     'To go back to the national overview, visit the **[National Briefing Landing Hub](/)**.'

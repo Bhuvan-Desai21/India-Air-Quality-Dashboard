@@ -103,7 +103,7 @@ col_left, col_right = st.columns([6, 4])
 
 with col_left:
     st.markdown('<h3 style="font-size: 1.2rem; margin-top: 0; margin-bottom: 8px;">Air Quality Map</h3>', unsafe_allow_html=True)
-    st.markdown('<p style="font-size: 0.82rem; color: #A6B1BE; margin-bottom: 12px;">Larger circles show higher average pollution. Colors show the risk level.</p>', unsafe_allow_html=True)
+    st.markdown('<p style="font-size: 0.82rem; color: #b3ada1; margin-bottom: 12px;">Larger circles show higher average pollution. Colors show the risk level.</p>', unsafe_allow_html=True)
     
     # Map rendering
     city_coords = pd.DataFrame([
@@ -131,7 +131,7 @@ with col_left:
     
     # Yearly trends
     st.markdown('<h3 style="font-size: 1.2rem; margin-top: 0; margin-bottom: 8px;">Yearly Trends</h3>', unsafe_allow_html=True)
-    st.markdown('<p style="font-size: 0.82rem; color: #A6B1BE; margin-bottom: 12px;">See how average pollution has changed each year.</p>', unsafe_allow_html=True)
+    st.markdown('<p style="font-size: 0.82rem; color: #b3ada1; margin-bottom: 12px;">See how average pollution has changed each year.</p>', unsafe_allow_html=True)
     
     annual = (
         filtered.groupby(["City", "Year"])["AQI"]
@@ -185,7 +185,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.markdown('<div style="margin-top: 24px; border-top: 1px solid #27303A; padding-top: 16px;"></div>', unsafe_allow_html=True)
+st.markdown('<div style="margin-top: 24px; border-top: 1px solid #38352f; padding-top: 16px;"></div>', unsafe_allow_html=True)
 st.markdown(
     '👉 **Next: What pollutants are in the air?** '
     'Go to the **[Specific Pollutants (Pollutant Breakdown)](Pollutant_Breakdown)** page in the sidebar.'

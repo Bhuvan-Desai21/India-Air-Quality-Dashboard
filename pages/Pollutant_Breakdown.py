@@ -204,7 +204,7 @@ with col_right:
     fig_exceed = configure_plotly_theme(fig_exceed)
     st.plotly_chart(fig_exceed, use_container_width=True)
 
-st.markdown('<div style="margin-top: 32px; border-top: 1px solid #27303A; padding-top: 24px;"></div>', unsafe_allow_html=True)
+st.markdown('<div style="margin-top: 32px; border-top: 1px solid #38352f; padding-top: 24px;"></div>', unsafe_allow_html=True)
 
 # Detailed comparison tabs
 st.markdown('<h3 style="font-size: 1.25rem; margin-bottom: 12px;">Compare Cities</h3>', unsafe_allow_html=True)
@@ -262,7 +262,7 @@ with tab2:
     st.plotly_chart(fig_trend, use_container_width=True)
 
 # Navigation and footer
-st.markdown('<div style="margin-top: 24px; border-top: 1px solid #27303A; padding-top: 16px;"></div>', unsafe_allow_html=True)
+st.markdown('<div style="margin-top: 24px; border-top: 1px solid #38352f; padding-top: 16px;"></div>', unsafe_allow_html=True)
 st.markdown(
     '👉 **Next: How do seasons and lockdowns affect the air?** '
     'Learn about weather patterns and lockdowns on the **[Seasons & Lockdowns (Seasonal Trends)](Seasonal_Trends)** page.'

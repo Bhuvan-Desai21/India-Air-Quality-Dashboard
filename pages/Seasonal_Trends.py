@@ -66,7 +66,7 @@ col_left, col_right = st.columns([5, 5])
 
 with col_left:
     st.markdown('<h3 style="font-size: 1.2rem; margin-top: 0; margin-bottom: 8px;">Monthly Air Quality Heatmap</h3>', unsafe_allow_html=True)
-    st.markdown(f'<p style="font-size: 0.82rem; color: #A6B1BE; margin-bottom: 12px;">Average AQI by month. Darker red blocks show months with worse air, usually in winter.</p>', unsafe_allow_html=True)
+    st.markdown(f'<p style="font-size: 0.82rem; color: #b3ada1; margin-bottom: 12px;">Average AQI by month. Darker red blocks show months with worse air, usually in winter.</p>', unsafe_allow_html=True)
     
     pivot = (
         city_aqi.groupby(["Year", "MonthName"])["AQI"]
@@ -93,7 +93,7 @@ with col_left:
 
 with col_right:
     st.markdown('<h3 style="font-size: 1.2rem; margin-top: 0; margin-bottom: 8px;">COVID Lockdown Impact (March–June)</h3>', unsafe_allow_html=True)
-    st.markdown(f'<p style="font-size: 0.82rem; color: #A6B1BE; margin-bottom: 12px;">Comparing average pollution levels when the city was normal (2019) vs. locked down (2020).</p>', unsafe_allow_html=True)
+    st.markdown(f'<p style="font-size: 0.82rem; color: #b3ada1; margin-bottom: 12px;">Comparing average pollution levels when the city was normal (2019) vs. locked down (2020).</p>', unsafe_allow_html=True)
     
     cities_in_view = [city] + ([compare] if compare != "None" else [])
     lockdown_df = df[
@@ -127,11 +127,11 @@ with col_right:
     )
     st.plotly_chart(fig_lock, use_container_width=True)
 
-st.markdown('<div style="margin-top: 32px; border-top: 1px solid #27303A; padding-top: 24px;"></div>', unsafe_allow_html=True)
+st.markdown('<div style="margin-top: 32px; border-top: 1px solid #38352f; padding-top: 24px;"></div>', unsafe_allow_html=True)
 
 # Seasonal comparison
 st.markdown('<h3 style="font-size: 1.25rem; margin-bottom: 8px;">Comparing Seasons</h3>', unsafe_allow_html=True)
-st.markdown(f'<p style="font-size: 0.82rem; color: #A6B1BE; margin-bottom: 12px;">Average AQI for each season of the year.</p>', unsafe_allow_html=True)
+st.markdown(f'<p style="font-size: 0.82rem; color: #b3ada1; margin-bottom: 12px;">Average AQI for each season of the year.</p>', unsafe_allow_html=True)
 
 season_df = df[df["City"].isin(cities_in_view) & df["AQI"].notna()]
 seasonal = (
@@ -160,7 +160,7 @@ fig_season.update_layout(
 st.plotly_chart(fig_season, use_container_width=True)
 
 # Navigation and footer
-st.markdown('<div style="margin-top: 24px; border-top: 1px solid #27303A; padding-top: 16px;"></div>', unsafe_allow_html=True)
+st.markdown('<div style="margin-top: 24px; border-top: 1px solid #38352f; padding-top: 16px;"></div>', unsafe_allow_html=True)
 st.markdown(
     '👉 **Next: How does this affect health?** '
     'See the exposure categories and health risks on the **[Health Risks (Health Risk)](Health_Risk)** page.'
