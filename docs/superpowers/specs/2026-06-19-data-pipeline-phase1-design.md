@@ -114,8 +114,13 @@ Operates on a city/station daily frame. Two layers:
 
 1. **Physical bounds** — null pollutant concentrations that are physically impossible
    (sensor errors), and negative values. Generous caps so real extreme events survive:
-   `PM2.5≤1000, PM10≤2000, NO2≤500, SO2≤2000, O3≤800, CO≤50 (mg/m³), NH3≤2000`. A nulled
-   value sets `quality_flag` to include `"imputed_bound"`.
+   `PM2.5≤1000, PM10≤2000, NO2≤500, SO2≤2000, O3≤800, NH3≤2000`. A nulled value sets
+   `quality_flag` to include `"imputed_bound"`. **CO is capped tight at 10 mg/m³** (not a
+   generous bound): the source CO column has an implausible tail (p95=8.5, p99=24, max=176
+   mg/m³ where realistic daily-avg ambient CO is ~1–3), and those bad readings otherwise
+   spuriously dominate the AQI and create false-Severe days that the original CPCB AQI
+   ignored. The 10 mg/m³ cap nulls ~4% of CO rows (723 city, 215 station) and removes the
+   false-Severe spikes. (Calibrated at the Phase-1 human-review gate.)
 2. **Statistical flag** — per `(City|StationShort, pollutant)`, ordered by Date, a centered
    rolling window (default 15 days) median + MAD; robust z = `0.6745*(x-median)/MAD`. Flag a
    point as `"flagged_spike"` when `|z| > 10` (conservative) AND it is **isolated** (its

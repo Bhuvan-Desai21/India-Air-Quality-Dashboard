@@ -10,9 +10,13 @@ import pandas as pd
 
 # Generous per-pollutant plausible maxima (above real extreme events) so only
 # sensor errors are nulled. Units match the data: ug/m3 except CO in mg/m3.
+# CO is capped tight (10 mg/m3): the source data's CO has an implausible tail
+# (p95=8.5, p99=24, max=176 mg/m3) where realistic daily-avg ambient CO is ~1-3.
+# Those bad readings spuriously dominate the AQI (the original CPCB AQI ignored
+# them); nulling >10 mg/m3 (~4% of CO rows) removes false-Severe days.
 PHYSICAL_MAX: dict[str, float] = {
     "PM2.5": 1000.0, "PM10": 2000.0, "NO2": 500.0,
-    "SO2": 2000.0, "O3": 800.0, "CO": 50.0, "NH3": 2000.0,
+    "SO2": 2000.0, "O3": 800.0, "CO": 10.0, "NH3": 2000.0,
 }
 POLLUTANTS = list(PHYSICAL_MAX)
 
