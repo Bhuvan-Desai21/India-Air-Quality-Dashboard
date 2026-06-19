@@ -78,6 +78,80 @@ def _coverage() -> dict[str, str]:
     }
 
 
+# --- Station (Bengaluru hyperlocal) data layer --------------------------------
+# A second cleaned parquet: 10 Bengaluru monitoring stations, same pollutant columns.
+# Loaded once at import, path resolved from __file__ like the city frame.
+_STATION_PATH = (
+    Path(__file__).resolve().parent / "data" / "processed" / "station_day_blr_clean.parquet"
+)
+_station_df = pd.read_parquet(_STATION_PATH)
+_station_df["Date"] = pd.to_datetime(_station_df["Date"])
+
+
+def _station_frame(station: str) -> pd.DataFrame:
+    return _station_df[_station_df["StationShort"] == station]
+
+
+# --- Constants for the analytical tools ---------------------------------------
+SEASON_ORDER: list[str] = ["Winter", "Spring", "Monsoon", "Post-Monsoon"]
+
+# WHO 2021 annual guideline values (µg/m³); None where WHO sets no annual value here.
+WHO_LIMITS: dict[str, float | None] = {
+    "PM2.5": 5.0, "PM10": 15.0, "NO2": 10.0, "SO2": None, "O3": 60.0, "CO": None, "NH3": None,
+}
+# CPCB annual standards (India), µg/m³ (CO would be mg/m³ but has no annual std here).
+CPCB_LIMITS: dict[str, float | None] = {
+    "PM2.5": 40.0, "PM10": 60.0, "NO2": 40.0, "SO2": 50.0, "O3": None, "CO": None, "NH3": None,
+}
+UNITS: dict[str, str] = {
+    "PM2.5": "µg/m³", "PM10": "µg/m³", "NO2": "µg/m³", "SO2": "µg/m³",
+    "O3": "µg/m³", "CO": "mg/m³", "NH3": "µg/m³",
+}
+
+# CPCB-band health guidance: category -> (advisory, who is most at risk).
+ADVISORY: dict[str, tuple[str, str]] = {
+    "Good": ("Air quality is good; safe for everyone.", "None."),
+    "Satisfactory": (
+        "Acceptable air; very sensitive individuals may feel minor discomfort.",
+        "Highly sensitive people.",
+    ),
+    "Moderate": (
+        "May cause breathing discomfort to people with lung or heart disease, "
+        "children, and older adults.",
+        "Asthma/heart patients, children, the elderly.",
+    ),
+    "Poor": (
+        "Breathing discomfort on prolonged exposure; sensitive groups should limit "
+        "outdoor exertion.",
+        "Most people on prolonged exposure.",
+    ),
+    "Very Poor": (
+        "Respiratory illness on prolonged exposure; avoid outdoor activity.",
+        "Everyone, seriously for sensitive groups.",
+    ),
+    "Severe": (
+        "Serious health impact even on light activity; stay indoors.",
+        "Everyone.",
+    ),
+    "Unknown": ("No health category available for this reading.", "Unknown."),
+}
+
+
+def _aqi_category(aqi: float) -> str:
+    """Map a numeric AQI to its CPCB band (matches the dashboard buckets)."""
+    if aqi <= 50:
+        return "Good"
+    if aqi <= 100:
+        return "Satisfactory"
+    if aqi <= 200:
+        return "Moderate"
+    if aqi <= 300:
+        return "Poor"
+    if aqi <= 400:
+        return "Very Poor"
+    return "Severe"
+
+
 # --- MCP server ---------------------------------------------------------------
 # host/port are read from the environment now (harmless for stdio) so the http
 # transport needs no code change -- only MCP_TRANSPORT=http at launch.
