@@ -10,7 +10,7 @@ An environmental-intelligence platform that tracks and visualizes air-quality tr
 **11 major Indian cities (2015–2020)** — and exposes the same analysis to LLMs through a
 remote **Model Context Protocol (MCP)** server and a built-in **Ask AI** chatbot.
 
-**Live dashboard → [bhuvan-desai-india-air-quality-data-analysis.streamlit.app](https://bhuvan-desai-india-air-quality-data-analysis.streamlit.app/)**
+**Live dashboard → [LINK](https://air-quality-dashboard-and-mcp-based-chatbot.streamlit.app/)**
 
 ![Landing](assets/screenshots/landing.png)
 
