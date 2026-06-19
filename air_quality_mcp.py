@@ -357,7 +357,7 @@ def seasonal_breakdown(city: str, metric: str = "aqi") -> dict:
     """Average a metric by season for a city: Winter, Spring, Monsoon, Post-Monsoon.
 
     Good for "is Delhi's pollution worse in winter?". Indian seasons, not calendar
-    quarters: Winter (Dec-Feb), Spring (Mar-Apr), Monsoon (Jun-Sep), Post-Monsoon
+    quarters: Winter (Dec-Feb), Spring (Mar-May), Monsoon (Jun-Sep), Post-Monsoon
     (Oct-Nov), aggregated across all years 2015-2020.
 
     Args:
@@ -527,6 +527,9 @@ def compare_to_standard(city: str, pollutant: str) -> dict:
 
     Answers "how far over the safe limit is Delhi's PM2.5?". Uses the city's most
     recent non-null reading for the pollutant. AQI is not a pollutant and is rejected.
+    Note: this compares a single day's reading against the WHO/CPCB *annual-mean*
+    guidelines, so a one-day multiple over the limit is not the same as exceeding the
+    annual standard -- treat it as "today's level vs the annual safe average".
 
     Args:
         city: City name (case-insensitive).

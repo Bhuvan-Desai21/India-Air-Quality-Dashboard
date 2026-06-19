@@ -146,7 +146,7 @@ def seasonal_breakdown(city: str, metric: str = "aqi") -> dict:
     """Average a metric by season for a city: Winter, Spring, Monsoon, Post-Monsoon.
 
     Good for "is Delhi's pollution worse in winter?". Indian seasons, not calendar
-    quarters: Winter (Dec-Feb), Spring (Mar-Apr), Monsoon (Jun-Sep), Post-Monsoon
+    quarters: Winter (Dec-Feb), Spring (Mar-May), Monsoon (Jun-Sep), Post-Monsoon
     (Oct-Nov), aggregated across all years 2015-2020.
 
     Args:
